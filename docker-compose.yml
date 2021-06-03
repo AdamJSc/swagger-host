@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+
+  swagger:
+    build:
+      context: .
+      dockerfile: ./swagger/Dockerfile
+    image: swaggerui:3.49.0
+    volumes:
+      - ${PWD}/static:/swagger
+
+  web:
+    image: nginx:1.21.0
+    ports:
+      - 3000:80
+    volumes:
+      - ${PWD}/static/docs:/usr/share/nginx/html
+    depends_on:
+      - swagger
