@@ -33,9 +33,17 @@ func Swagger() error {
 	if err := downloadFile(swagURL, localSwagZip); err != nil {
 		return fmt.Errorf("cannot download swagger ui zip: %w", err)
 	}
+	defer func() {
+		// cleanup
+		os.Remove(localSwagZip)
+	}()
 	if err := unzipSwaggerUI(localSwagZip, localSwagDir); err != nil {
 		return fmt.Errorf("cannot unzip swagger ui file: %w", err)
 	}
+	defer func() {
+		// cleanup
+		os.RemoveAll(localSwagDir)
+	}()
 
 	// move dist to static docs
 	if err := os.Rename(distPath, docsPath); err != nil {
@@ -50,14 +58,6 @@ func Swagger() error {
 	// download example definition file
 	if err := downloadFile(exampleDef, path(docsPath, localDef)); err != nil {
 		return fmt.Errorf("cannot download example definition: %w", err)
-	}
-
-	// cleanup
-	if err := os.Remove(localSwagZip); err != nil {
-		return fmt.Errorf("cannot remove swagger ui zip file: %w", err)
-	}
-	if err := os.RemoveAll(localSwagDir); err != nil {
-		return fmt.Errorf("cannot remove swagger ui zip contents directory: %w", err)
 	}
 
 	return nil
@@ -134,7 +134,7 @@ func replaceDefinitionURL(dir string) error {
 		return fmt.Errorf("cannot read file '%s': %w", path, err)
 	}
 
-	oldStr := "https://petstore.swagger.io/v2/swagger.json/definition.yml"
+	oldStr := "https://petstore.swagger.io/v2/swagger.json"
 	contents := strings.Replace(string(b), oldStr, localDef, -1)
 
 	if err := ioutil.WriteFile(path, []byte(contents), 0644); err != nil {
